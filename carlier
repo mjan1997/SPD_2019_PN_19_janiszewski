@@ -1,0 +1,374 @@
+#include <algorithm>
+#include <iostream>
+#include <fstream>
+#include <vector>
+using namespace std;
+
+int lZadan, lCzasow;
+
+class Zadanie
+{
+public:
+    int r, p, q;
+    int nr_zadania;
+
+    Zadanie()
+    {
+        r = 0;
+        p = 0;
+        q = 0;
+        nr_zadania = 0;
+    }
+};
+Zadanie znajdz_min(vector<Zadanie> wek, vector<int> nNieuszeregowane, char czas);
+Zadanie znajdz_max(vector<Zadanie> wek, vector<int> nGotowe, char czas);
+
+int find(vector<Zadanie> dane, int nr_zadania);
+
+Zadanie rmin(vector<Zadanie> dane);
+Zadanie qmax(vector<Zadanie> dane);
+
+int znajdz_maxx(int a, int b);
+
+int cmax(vector<Zadanie> wek, int ileZadan);
+
+vector<Zadanie> schrage(vector<Zadanie> dane);
+
+int schragePMTN(vector<Zadanie> dane);
+
+
+//zwraca index b
+
+int findB(vector<Zadanie> dane)
+{
+    vector<int> tmp2(lZadan);
+    vector<int> tmp1(tmp2.size() + 1);
+    tmp1[0] = 0;
+    tmp1[1] = znajdz_maxx(dane[0].r, 0 + 0);
+    tmp2[0] = tmp1[1] + dane[0].p;
+    for (int j = 2; j <= lZadan; j++)
+    {
+        tmp1[j] = znajdz_maxx(dane[j - 1].r, tmp1[j - 1] + dane[j - 2].p);
+        tmp2[j - 1] = tmp1[j] + dane[j - 1].p;
+    }
+    for (int i = 0; i < tmp2.size(); i++)
+    {
+        tmp2[i] = tmp2[i] + dane[i].q;
+    }
+    vector<int>::iterator it = max_element(begin(tmp2), end(tmp2));
+    //zwracamy najwiekszy index z zebranych w tmp2 elemenentow ktore rowne sa sumie czasu zakonczenia p oraz czasu dostarczenia q
+    int index = distance(tmp2.begin(), it);
+    return index;
+}
+//zwraca index a
+//zadanie o najmniejszym indexie z kolejnosci zadan w ktorych nie wystepuje przestoje/przerwy pomiedzy wykonywaniem zadan
+int findA(vector<Zadanie> dane,int b)
+{
+    int a = 0;
+    int tmp2 = 0;
+    tmp2 = dane[0].r;
+    for (int i = 1; i < dane.size(); i++)
+    {
+        tmp2 = tmp2 + dane[i - 1].p + dane[b].q;
+        if (dane[i].r > tmp2)
+        {
+            tmp2 = dane[i].r;
+            a = i;
+        }
+    }
+    return a;
+}
+
+
+//zwraca index c
+//zadanie o jak najwiekszym indexie takie ze czas dostarczenia zadania j jest mniejszy od zadania b
+int findC(vector<Zadanie> dane, int a, int b)
+{
+    int c = 999999;
+    for (int j = a; j < b; j++)
+        if (dane[j].q < dane[b].q)
+        {
+            c = j;
+        }
+    return c;
+}
+
+
+
+int UB = 999999;
+vector<Zadanie> kolejnoscOstateczna;
+
+vector<Zadanie> Carlier(vector<Zadanie> dane)
+{
+    
+    int LB;
+    int rK = 999999, pK = 0, qK = 999999, hK; //przypisanie wystarczajacych wartosci do wektora K aby potem mozna było wejsc w ify
+    vector<Zadanie> kolejnoscTMP = schrage(dane);
+    vector<Zadanie> tmp = kolejnoscTMP;
+
+    int U = cmax(kolejnoscTMP, lZadan); // linia 1
+    if (U < UB) //linia 2
+    {
+        UB = U; //linia 3
+        kolejnoscOstateczna = kolejnoscTMP; //linia 4
+        }
+        
+        int b = findB(kolejnoscTMP); //linia 6
+        int a = findA(kolejnoscTMP, b);    //linia 7
+        int c = findC(kolejnoscTMP, a, b); //linia 8
+        if (c == 999999) //linia 9
+        {
+            return kolejnoscOstateczna; //linia 10
+        }
+        //przypisanie wartosci do zmiennych pomocniczy imitujacych wektor K
+        for (int i = c + 1; i < b + 1; i++) //linia 13
+        {
+            if (rK > kolejnoscTMP[i].r)
+                rK = kolejnoscTMP[i].r;
+            if (qK > kolejnoscTMP[i].q)
+                qK = kolejnoscTMP[i].q;
+            pK += kolejnoscTMP[i].p;
+        }
+        kolejnoscTMP[c].r = znajdz_maxx(kolejnoscTMP[c].r, (rK + pK)); //linia 14
+        LB = schragePMTN(kolejnoscTMP);                                //linia 15
+
+        if (LB < UB) //linia 17
+        {
+            Carlier(kolejnoscTMP); //linia 18
+        }
+        kolejnoscTMP[c].q = znajdz_maxx(kolejnoscTMP[c].q, (qK + pK)); //linia 21
+        LB = schragePMTN(kolejnoscTMP);                                //linia 22
+
+        if (LB < UB) //linia 24
+        {
+            Carlier(kolejnoscTMP); //linia 25
+        }
+    return kolejnoscOstateczna;
+}
+
+int main()
+{
+    ifstream data("in50.txt");
+    data >> lZadan;
+    data >> lCzasow;
+    int x = lZadan;
+    vector<Zadanie> dane(lZadan);
+    for (int j = 0; j < lZadan; j++)
+    {
+        {
+            data >> dane[j].r;
+            data >> dane[j].p;
+            data >> dane[j].q;
+            dane[j].nr_zadania = j + 1;
+        }
+    }
+    cout << "poczatek programu" << endl
+         << "---------SCHRAGE---------" << endl
+         << endl;
+    cout << endl
+         << "cmax dla schrage bez podzialu: " << cmax(schrage(dane), x) << endl;
+    cout << "cmax dla schrage z podzialem:" << schragePMTN(dane) << endl;
+    cout << endl
+         << endl
+         << "---------CARLIER---------" << endl
+         << endl;
+    vector<Zadanie> xd = Carlier(dane);
+    cout << "cmax Carlier: " << cmax(Carlier(dane), x) << endl;
+    cout << "koniec programu" << endl;
+    cout << endl;
+    // for(int x=0;x<xd.size();x++)
+    // cout<<xd[x].nr_zadania<<" ";
+}
+
+
+
+
+Zadanie znajdz_min(vector<Zadanie> wek, vector<int> nNieuszeregowane, char czas)
+{
+    Zadanie Min;
+    //ustawiamy odpowiednia duza wartosc zeby czs r/p/q byl mniejszy
+    Min.r = 100000;
+    Min.p = 100000;
+    Min.q = 100000;
+    int k;
+    for (int i = 0; i < wek.size(); i++)
+    {
+
+        for (int j = 0; j < nNieuszeregowane.size(); j++)
+        {
+            /* sprawdzenie czy nalezy do zbioru nieuszeregowanych */
+            if (nNieuszeregowane[j] == wek[i].nr_zadania)
+            {
+                k = i;
+                break;
+            }
+            else
+                k = -1;
+        }
+        /* skoro nalezy to sprawdzamy czy czas jest mniejszy od stalej czasowej */
+        if (k >= 0)
+        {
+
+            switch (czas)
+            {
+            case 'r':
+                // sprawdzamy czy jest mniejsze od poprzednie minimum aby wiedziec czy mamy najmniejsza wartosc
+                if (wek[i].r < Min.r)
+                    Min = wek[i];
+                break;
+            case 'p':
+                if (wek[i].p < Min.p)
+                    Min = wek[i];
+                break;
+            case 'q':
+                if (wek[i].q < Min.q)
+                    Min = wek[i];
+                break;
+            }
+        }
+    }
+    return Min;
+}
+int find(vector<Zadanie> dane, int nr_zadania)
+{
+    for (int i = 0; i < dane.size(); i++)
+    {
+        if (nr_zadania == dane[i].nr_zadania)
+            return i;
+    }
+    return -1;
+}
+
+Zadanie rmin(vector<Zadanie> dane)
+{
+    int rMin = 10000;
+    Zadanie zad;
+    for (int i = 0; i < dane.size(); i++)
+    {
+        if (rMin >= dane[i].r)
+        {
+            zad = dane[i];
+            rMin = dane[i].r;
+        }
+    }
+    return zad;
+}
+
+Zadanie qmax(vector<Zadanie> dane)
+{
+    Zadanie zad;
+    int qMax = 0;
+    for (int i = 0; i < dane.size(); i++)
+    {
+        if (qMax < dane[i].q)
+        {
+            zad = dane[i];
+            qMax = dane[i].q;
+        }
+    }
+    return zad;
+}
+
+int znajdz_maxx(int a, int b)
+{
+    return (a > b) ? a : b;
+}
+
+int cmax(vector<Zadanie> wek, int ileZadan)
+{
+    vector<int> C(lZadan);     //wektor momentow zakonczenia zadan
+    vector<int> S(C.size() + 1); //momenty rozpoczecia wykonywania zadania
+    S[0] = 0;
+    //wczesniejsze zadanie nie moze zaczac sie wczesniej niz czas jego przygotowania i czas zakonczenia zadania poprzedniego
+    S[1] = max(wek[0].r, 0 + 0);
+    C[0] = S[1] + wek[0].p;
+    for (int j = 2; j <= ileZadan; j++)
+    {
+        S[j] = max(wek[j - 1].r, S[j - 1] + wek[j - 2].p);
+        C[j - 1] = S[j] + wek[j - 1].p; //wyliczamy momenty zakonczenia zadan
+    }
+    /*dodawanie czasu dostarczania*/
+    for (int i = 0; i < C.size(); i++)
+        C[i] = C[i] + wek[i].q;
+    /*szukanie indexu maksymalnej wartosci Cm ktora jest cmax'em*/
+    vector<int>::iterator it = max_element(begin(C), end(C));
+    int index = distance(C.begin(), it);
+    return C[index];
+}
+vector<Zadanie> schrage(vector<Zadanie> dane)
+{
+    int i = 1;
+    vector<Zadanie> kolejnosc;
+    vector<Zadanie> nGotowe(0);
+    vector<Zadanie> nNieuszeregowane(lZadan);
+    nNieuszeregowane = dane;
+    Zadanie j;
+    int t = rmin(nNieuszeregowane).r;
+    while (nGotowe.size() != 0 || nNieuszeregowane.size() != 0)
+    {
+        while (nNieuszeregowane.size() != 0 && rmin(nNieuszeregowane).r <= t)
+        {
+            j = rmin(nNieuszeregowane);
+
+            nGotowe.push_back(j);
+            nNieuszeregowane.erase(nNieuszeregowane.begin() + find(nNieuszeregowane, j.nr_zadania));
+        }
+        if (nGotowe.size() == 0)
+            t = rmin(nNieuszeregowane).r;
+        else
+        {
+            j = qmax(nGotowe);
+            nGotowe.erase(nGotowe.begin() + find(nGotowe, j.nr_zadania));
+            kolejnosc.push_back(j);
+            i++;
+            t = t + j.p;
+        }
+    }
+    return kolejnosc;
+}
+
+int schragePMTN(vector<Zadanie> dane)
+{
+    int cmax = 0;
+    vector<Zadanie> nGotowe(0);
+    vector<Zadanie> nNieuszeregowane(lZadan);
+    nNieuszeregowane = dane;
+    Zadanie j;
+    Zadanie l;
+    int t = 0;
+    l.q = 9999;
+    l.p = 0;
+
+    while (nGotowe.size() != 0 || nNieuszeregowane.size() != 0)
+    {
+        while (nNieuszeregowane.size() != 0 && rmin(nNieuszeregowane).r <= t)
+        {
+            j = rmin(nNieuszeregowane);
+
+            nGotowe.push_back(j);
+            nNieuszeregowane.erase(nNieuszeregowane.begin() + find(nNieuszeregowane, j.nr_zadania));
+
+            if (j.q > l.q)
+            {
+                l.p = t - j.r;
+                t = j.r;
+
+                if (l.p > 0)
+                {
+                    nGotowe.push_back(l);
+                }
+            }
+        }
+        if (nGotowe.size() == 0)
+            t = rmin(nNieuszeregowane).r;
+        else
+        {
+            j = qmax(nGotowe);
+            nGotowe.erase(nGotowe.begin() + find(nGotowe, j.nr_zadania));
+            l = j;
+            t = t + j.p;
+            cmax = znajdz_maxx(cmax, t + j.q);
+        }
+    }
+    return cmax;
+}
