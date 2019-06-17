@@ -267,7 +267,7 @@ vector<Zadanie> Carlier(vector<Zadanie> dane)
 		}
 		pi[cc].r = znajdz_max(pi[cc].r, (rK + pK));
 		LB = schragePMTN(pi);
-		hK = rK + pK + qK;
+		hK = rK + pK + qK;   //////////brakowalo tego
 
 		for (int i = cc; i < bb + 1; i++) {
 			K[i - (cc)] = i;
@@ -281,8 +281,8 @@ vector<Zadanie> Carlier(vector<Zadanie> dane)
     			}
 			pKc += pi[i].p;
 		}
-		hKc = rKc + pKc + qKc;
-		pom = znajdz_max(hKc, hK);
+		hKc = rKc + pKc + qKc; //////////brakowalo tego
+		pom = znajdz_max(hKc, hK); //////////brakowalo tego
 		LB = znajdz_max(LB, pom);
 		if (LB < UB)
 		{
@@ -291,8 +291,8 @@ vector<Zadanie> Carlier(vector<Zadanie> dane)
 		pi = daneOryginal; 
 		pi[cc].q = znajdz_max(pi[cc].q, (qK + pK));
 		LB = schragePMTN(pi);
-		pom = znajdz_max(hK, hKc);
-		LB = znajdz_max(LB, pom);
+		pom = znajdz_max(hK, hKc);//////////brakowalo tego
+		LB = znajdz_max(LB, pom);//////////brakowalo tego
 		if (LB < UB)
 		{
 			Carlier(pi);
