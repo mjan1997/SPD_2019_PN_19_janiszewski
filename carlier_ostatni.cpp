@@ -22,7 +22,7 @@ public:
 		nr_zadania=0;
 	}
 };
-/*zwraca najkrótszy czas*/
+/*zwraca najkrï¿½tszy czas*/
 Zadanie znajdz_min(vector<Zadanie> wek, vector<int> nNieuszeregowane, char czas);
 
 /*zwraca najdluzszy czas*/
@@ -36,6 +36,44 @@ vector<int> schrage(vector<Zadanie> wek);
 
 /*funkcja celu zwracajaca cmax*/
 int cmax(vector<int> kolejnosc, vector<Zadanie> wek,  int lZadan);
+
+
+
+
+
+
+
+
+int C_MAX(vector<int> kolejnosc, vector<Zadanie> wek)
+{
+int a=0;
+int C=0;
+for(int i = 0; i < kolejnosc.size(); i++) // C_MAX z calego wektora kolejnosci
+{
+a = std::max(wek[i].r,a) + wek[i].p;
+C = std::max(C,a+wek[i].q);
+}
+return C;
+}
+
+int C_MAX(vector<int> kolejnosc, vector<Zadanie> wek,int indeks)
+{
+int a=0;
+int C=0;
+for(int i = 0; i <= indeks; i++) //C_MAX do elementu o indeksie = indeks
+{
+a = std::max(wek[i].r,a) + wek[i].p;
+C = std::max(C,a+wek[i].q);
+}
+return C;	
+}
+
+
+
+
+
+
+
 
 int znajdz (vector<int> kolejnosc, int b)
 {   int indeks=0;
@@ -53,21 +91,25 @@ int znajdz (vector<int> kolejnosc, int b)
 
 int findB (int U, vector<int> kolejnosc, vector<Zadanie> wek)
 {
+	int C_MAX_start = C_MAX(kolejnosc, wek);
     int tmp = 0;
     int p=0;
     int rozmiar = kolejnosc.size();
-
-    for (auto & i : kolejnosc)   // ew kolejnosc.size() -1
+	int wynik =0;
+    for (int i =rozmiar-1; i>=0; i--)   // ew kolejnosc.size() -1
 	{
 	    //cout << wek[i].r << " " << wek[i].p << " " << wek[i].q << endl;
-	    p=max(p,wek[i].r)+wek[i].p;
+	    //p=max(p,wek[i].r)+wek[i].p; ////////////////////////////////////////zamiast tego \/
 	    //cout << "suma :" << p+wek[i].q<<endl;
-        		if(U== p+wek[i].q) /// U = 1513, co jest zgodne z instrukcja, ale p+....q =! 1513 nigdy. -> zeszyt
-		{
-			return i;
-		}
+        	//if(U== p+wek[i].q) /// U = 1513, co jest zgodne z instrukcja, ale p+....q =! 1513 nigdy. -> zeszyt
+
+			if(C_MAX(kolejnosc,wek,i) != C_MAX_start)
+			{
+				wynik = i+1;
+				break;
+			}
 	}
-	return 0;
+	return wynik;
 }
 
 int findA(int U,vector<int> kolejnosc,vector <Zadanie> wek, int b)
@@ -273,8 +315,8 @@ vector<int> schrage(vector<Zadanie> wek) {
         /* AKTUALIZACJA CHWILI CZASOWEJ T GDY NIE MA ZADAN GOTOWYCH DO USZEREGOWANIA*/
 		// jezeli zadne zadanie nie jest obecnie wykonywane
 		if (nGotowe.size() == 0) {
-                // jezeli tak chwila t przesuwana jest do momentu dostepnosci najwczeœniejszego zadania ze zbioru
-               //  i wznawiany proces aktualizowania zbioru zadañ gotowych
+                // jezeli tak chwila t przesuwana jest do momentu dostepnosci najwczeï¿½niejszego zadania ze zbioru
+               //  i wznawiany proces aktualizowania zbioru zadaï¿½ gotowych
 			t = znajdz_min(wek, nNieuszeregowane, 'r').r;
 		}
         // JESLI ZBIOR nGotowy NI JEST PUSTY DO CZESCIOWEGO USZEREGOWANIA DODAWANE JEST ZADANIA Z TEGO ZBIORU O NADJLUZSZYM CZASIE DOSTARCZANIA
